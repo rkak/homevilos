@@ -8,6 +8,10 @@
 #ifndef HAL_RVPB_UART_H_
 #define HAL_RVPB_UART_H_
 
+// #define HAL_UART_FIRST_OPTIMIZE		1
+// #define HAL_UART_SECOND_OPTIMIZE		1
+#define HAL_UART_THIRD_OPTIMIZE				1
+
 typedef union UARTDR_t
 {
     uint32_t all;
