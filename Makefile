@@ -5,7 +5,7 @@ TARGET = rvpb
 
 CC = arm-none-eabi-gcc
 AS = arm-none-eabi-as
-LD = arm-none-eabi-ld
+LD = arm-none-eabi-gcc
 OC = arm-none-eabi-objcopy
 
 LINKER_SCRIPT = ./homevilos.ld
@@ -28,7 +28,9 @@ INC_DIRS 	= -I include				\
 						-I hal/$(TARGET)	\
 						-I lib
 
-CFLAGS = -c -g -std=c11
+CFLAGS = -c -g -std=c11 -mthumb-interwork
+
+LDFLAGS = -nostartfiles -nostdlib -nodefaultlibs -static -lgcc
 
 homevilos = build/homevilos.axf
 homevilos_bin = build/homevilos.bin
@@ -50,7 +52,8 @@ gdb:
 	arm-none-eabi-gdb
 
 $(homevilos): $(ASM_OBJS) $(C_OBJS) $(LINKER_SCRIPT)
-	$(LD) -n -T $(LINKER_SCRIPT) -o $(homevilos) $(ASM_OBJS) $(C_OBJS) -Map=$(MAP_FILE)
+	$(LD) -n -T $(LINKER_SCRIPT) -o $(homevilos) $(ASM_OBJS) $(C_OBJS) \
+				-Wl,-Map=$(MAP_FILE) $(LDFLAGS)
 	$(OC) -O binary $(homevilos) $(homevilos_bin)
 
 build/%.os: %.S
