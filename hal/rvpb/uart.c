@@ -5,7 +5,7 @@
 
 extern volatile PL011_t *uart;
 
-static void interrupt_handler (void);
+static void uart_interrupt_handler (void);
 
 void hal_uart_init (void)
 {
@@ -15,9 +15,12 @@ void hal_uart_init (void)
 	uart->uartcr.bits.RXE = 1;
 	uart->uartcr.bits.UARTEN = 1;
 
+	// enable input interrupt
+	uart->uartimsc.bits.RXIM = 1;
+
 	// register uart interrupt handler
 	hal_interrupt_enable (UART_INTERRUPT0);
-	hal_interrupt_register_handler (interrupt_handler, UART_INTERRUPT0);
+	hal_interrupt_register_handler (uart_interrupt_handler, UART_INTERRUPT0);
 }
 
 void hal_uart_put_char (uint8_t ch)
@@ -76,7 +79,7 @@ uint8_t hal_uart_get_char (void)
 #endif /* HAL_UART_THIRD_OPTIMIZE */
 }
 
-static void interrupt_handler (void)
+static void uart_interrupt_handler (void)
 {
 	uint8_t ch = hal_uart_get_char ();
 	hal_uart_put_char (ch);

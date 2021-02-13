@@ -3,6 +3,7 @@
 #include "interrupt.h"
 #include "hal_interrupt.h"
 #include "arm_cpu.h"
+#include "hal_uart.h"
 
 extern volatile gic_cput_t *gic_cpu;
 extern volatile gic_dist_t *gic_dist;
@@ -25,7 +26,7 @@ void hal_interrupt_init (void)
 
 void hal_interrupt_enable (uint32_t interrupt_num)
 {
-	if ((interrupt_num < GIC_IRQ_START) || (GIC_IRQ_END < interrupt_num ))
+	if ((interrupt_num < GIC_IRQ_START) || (GIC_IRQ_END < interrupt_num))
 		return;
 
 	uint32_t bit_num = interrupt_num - GIC_IRQ_START;
@@ -43,7 +44,7 @@ void hal_interrupt_enable (uint32_t interrupt_num)
 
 void hal_interrupt_disable (uint32_t interrupt_num)
 {
-	if ((interrupt_num < GIC_IRQ_START) || (GIC_IRQ_END < interrupt_num ))
+	if ((interrupt_num < GIC_IRQ_START) || (GIC_IRQ_END < interrupt_num))
 		return;
 
 	uint32_t bit_num = interrupt_num - GIC_IRQ_START;
