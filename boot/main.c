@@ -4,6 +4,7 @@
 #include "stdlib.h"
 #include "hal_uart.h"
 #include "hal_timer.h"
+#include "task.h"
 
 static void hw_init (void);
 extern void hal_interrupt_init (void);
@@ -11,6 +12,9 @@ extern void hal_uart_init (void);
 extern void hal_uart_put_char (uint8_t ch);
 static void printf_test (void);
 static void timer_test (void);
+void user_task0 (void);
+void user_task1 (void);
+void user_task2 (void);
 
 void main (void)
 {
@@ -39,6 +43,29 @@ static void hw_init (void)
 	hal_timer_init ();
 }
 
+static void kernel_init (void)
+{
+	uint32_t task_id;
+
+	task_id = kernel_task_create (user_task0);
+	if (task_id == NOT_ENOUGH_TASK_NUM)
+	{
+		putstr ("Task0 creation failed\n");
+	}
+
+	task_id = kernel_task_create (user_task1);
+	if (task_id == NOT_ENOUGH_TASK_NUM)
+	{
+		putstr ("Task1 creation failed\n");
+	}
+
+	task_id = kernel_task_create (user_task2);
+	if (task_id == NOT_ENOUGH_TASK_NUM)
+	{
+		putstr ("Task2 creation failed\n");
+	}
+}
+
 static void printf_test (void)
 {
 	char *str = "printf pointer test";
@@ -62,4 +89,25 @@ static void timer_test (void)
 		debug_printf ("current count : %u\n", hal_timer_get_1ms_counter());
 		delay (1000);
 	}
+}
+
+void user_task0 (void)
+{
+	debug_printf ("User task #0\n");
+
+	while (true);
+}
+
+void user_task1 (void)
+{
+	debug_printf ("User task #1\n");
+
+	while (true);
+}
+
+void user_task2 (void)
+{
+	debug_printf ("User task #2\n");
+
+	while (true);
 }
