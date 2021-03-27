@@ -5,6 +5,7 @@
 #include "hal_uart.h"
 #include "hal_timer.h"
 #include "task.h"
+#include "kernel.h"
 
 static void hw_init (void);
 extern void hal_interrupt_init (void);
@@ -12,6 +13,7 @@ extern void hal_uart_init (void);
 extern void hal_uart_put_char (uint8_t ch);
 static void printf_test (void);
 static void timer_test (void);
+static void kernel_init (void);
 void user_task0 (void);
 void user_task1 (void);
 void user_task2 (void);
@@ -30,10 +32,12 @@ void main (void)
 
 	putstr("Hello World!\n");
 
-	printf_test ();
+//	printf_test ();
 
-	timer_test ();
+//	timer_test ();
 //	while (true);
+
+	kernel_init ();
 }
 
 static void hw_init (void)
@@ -46,6 +50,8 @@ static void hw_init (void)
 static void kernel_init (void)
 {
 	uint32_t task_id;
+
+	kernel_task_init ();
 
 	task_id = kernel_task_create (user_task0);
 	if (task_id == NOT_ENOUGH_TASK_NUM)
@@ -64,6 +70,8 @@ static void kernel_init (void)
 	{
 		putstr ("Task2 creation failed\n");
 	}
+
+	kernel_start ();
 }
 
 static void printf_test (void)
@@ -93,21 +101,33 @@ static void timer_test (void)
 
 void user_task0 (void)
 {
-	debug_printf ("User task #0\n");
+	uint32_t local = 0;
 
-	while (true);
+	while (true)
+	{
+		debug_printf ("User task #0 SP=0x%x\n", &local);
+		kernel_yield ();
+	}
 }
 
 void user_task1 (void)
 {
-	debug_printf ("User task #1\n");
+	uint32_t local = 0;
 
-	while (true);
+	while (true)
+	{
+		debug_printf ("User task #1 SP=0x%x\n", &local);
+		kernel_yield ();
+	}
 }
 
 void user_task2 (void)
 {
-	debug_printf ("User task #2\n");
+	uint32_t local = 0;
 
-	while (true);
+	while (true)
+	{
+		debug_printf ("User task #2 SP=0x%x\n", &local);
+		kernel_yield ();
+	}
 }
