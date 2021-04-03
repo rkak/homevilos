@@ -6,6 +6,7 @@
 #include "hal_timer.h"
 #include "task.h"
 #include "kernel.h"
+#include "event.h"
 
 static void hw_init (void);
 extern void hal_interrupt_init (void);
@@ -52,6 +53,7 @@ static void kernel_init (void)
 	uint32_t task_id;
 
 	kernel_task_init ();
+	kernel_event_flag_init ();
 
 	task_id = kernel_task_create (user_task0);
 	if (task_id == NOT_ENOUGH_TASK_NUM)
@@ -103,9 +105,28 @@ void user_task0 (void)
 {
 	uint32_t local = 0;
 
+	debug_printf ("User task #0 SP=0x%x\n", &local);
 	while (true)
 	{
-		debug_printf ("User task #0 SP=0x%x\n", &local);
+		bool pending_event = true;
+
+		while (pending_event)
+		{
+			kernel_event_flag_t handle_event = kernel_wait_events (kernel_event_flag_uart_in | kernel_event_flag_cmd_out);
+			switch (handle_event)
+			{
+				case kernel_event_flag_uart_in:
+					debug_printf ("\nEvent handled\n");
+					kernel_event_flag_set (kernel_event_flag_cmd_in);
+					break;
+				case kernel_event_flag_cmd_out:
+					debug_printf ("\nEvent handled of cmd out by task0\n");
+					break;
+				default:
+					pending_event = false;
+					break;
+			}
+		}
 		kernel_yield ();
 	}
 }
@@ -114,9 +135,16 @@ void user_task1 (void)
 {
 	uint32_t local = 0;
 
+	debug_printf ("User task #1 SP=0x%x\n", &local);
 	while (true)
 	{
-		debug_printf ("User task #1 SP=0x%x\n", &local);
+		kernel_event_flag_t handle_event = kernel_wait_events (kernel_event_flag_cmd_in);
+		switch (handle_event)
+		{
+			case kernel_event_flag_cmd_in:
+				debug_printf ("\nCMD Event handled by task 1\n");
+				break;
+		}
 		kernel_yield ();
 	}
 }
@@ -125,9 +153,9 @@ void user_task2 (void)
 {
 	uint32_t local = 0;
 
+	debug_printf ("User task #2 SP=0x%x\n", &local);
 	while (true)
 	{
-		debug_printf ("User task #2 SP=0x%x\n", &local);
 		kernel_yield ();
 	}
 }
