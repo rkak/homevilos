@@ -8,3 +8,12 @@ void delay (uint32_t ms)
 
 	while (goal != hal_timer_get_1ms_counter ());
 }
+
+void memclr (void *data, int len)
+{
+	int i;
+	for (i = 0; i < len; i++)
+	{
+		*((char *)data + i) = 0;
+	}
+}

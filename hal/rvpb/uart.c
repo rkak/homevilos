@@ -3,6 +3,7 @@
 #include "hal_uart.h"
 #include "hal_interrupt.h"
 #include "event.h"
+#include "msg.h"
 
 extern volatile PL011_t *uart;
 
@@ -85,7 +86,8 @@ static void uart_interrupt_handler (void)
 	uint8_t ch = hal_uart_get_char ();
 	hal_uart_put_char (ch);
 
-	kernel_send_events (kernel_event_flag_uart_in | kernel_event_flag_cmd_in);
+	kernel_send_msg (KERNEL_MSG_Q_TASK0, &ch, 1);
+	kernel_send_events (kernel_event_flag_uart_in);
 
 	if (ch == 'X')
 		kernel_send_events (kernel_event_flag_cmd_out);

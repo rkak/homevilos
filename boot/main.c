@@ -7,6 +7,7 @@
 #include "task.h"
 #include "kernel.h"
 #include "event.h"
+#include "msg.h"
 
 static void hw_init (void);
 extern void hal_interrupt_init (void);
@@ -106,6 +107,11 @@ void user_task0 (void)
 	uint32_t local = 0;
 
 	debug_printf ("User task #0 SP=0x%x\n", &local);
+
+	uint8_t cmd_buf[16];
+	uint32_t cmd_buf_idx = 0;
+	uint8_t uartch = 0;
+
 	while (true)
 	{
 		bool pending_event = true;
@@ -116,8 +122,40 @@ void user_task0 (void)
 			switch (handle_event)
 			{
 				case kernel_event_flag_uart_in:
-					debug_printf ("\nEvent handled\n");
-					kernel_event_flag_set (kernel_event_flag_cmd_in);
+					kernel_recv_msg (KERNEL_MSG_Q_TASK0, &uartch, 1);
+					if (uartch == '\r')
+					{
+						cmd_buf[cmd_buf_idx] = '\0';
+
+						while (true)
+						{
+							kernel_send_events (kernel_event_flag_cmd_in);
+
+							if (kernel_send_msg (KERNEL_MSG_Q_TASK1, &cmd_buf_idx, 1) == false)
+							{
+								kernel_yield ();
+							}
+							else if (kernel_send_msg (KERNEL_MSG_Q_TASK1, cmd_buf, cmd_buf_idx) == false)
+							{
+								/* rollback for cmd_buf_idx */
+								uint8_t rollback;
+								kernel_recv_msg (KERNEL_MSG_Q_TASK1, &rollback, 1);
+								kernel_yield ();
+							}
+							else
+							{
+								break;
+							}
+						}
+
+						cmd_buf_idx = 0;
+					}
+					else
+					{
+						cmd_buf[cmd_buf_idx] = uartch;
+						cmd_buf_idx ++;
+						cmd_buf_idx %= 16;
+					}
 					break;
 				case kernel_event_flag_cmd_out:
 					debug_printf ("\nEvent handled of cmd out by task0\n");
@@ -136,13 +174,20 @@ void user_task1 (void)
 	uint32_t local = 0;
 
 	debug_printf ("User task #1 SP=0x%x\n", &local);
+
+	uint8_t cmd_len = 0;
+	uint8_t cmd[16] = {0};
+
 	while (true)
 	{
 		kernel_event_flag_t handle_event = kernel_wait_events (kernel_event_flag_cmd_in);
 		switch (handle_event)
 		{
 			case kernel_event_flag_cmd_in:
-				debug_printf ("\nCMD Event handled by task 1\n");
+				memclr (cmd, 16);
+				kernel_recv_msg (KERNEL_MSG_Q_TASK1, &cmd_len, 1);
+				kernel_recv_msg (KERNEL_MSG_Q_TASK1, cmd, cmd_len);
+				debug_printf ("\nRecv Cmd : %s\n", cmd);
 				break;
 		}
 		kernel_yield ();
