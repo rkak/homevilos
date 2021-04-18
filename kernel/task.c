@@ -65,6 +65,11 @@ uint32_t kernel_task_prio_create (kernel_task_func_t start_func, uint32_t priori
 	return (sAllocated_tcb_index - 1);
 }
 
+uint32_t kernel_task_get_current_task_id (void)
+{
+	return sCurrent_tcb_index;
+}
+
 static kernel_tcb_t *scheduler_round_robin_algorithm (void)
 {
 	sCurrent_tcb_index++;

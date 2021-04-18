@@ -84,11 +84,21 @@ uint8_t hal_uart_get_char (void)
 static void uart_interrupt_handler (void)
 {
 	uint8_t ch = hal_uart_get_char ();
+
+	if (ch == 'U')
+	{
+		kernel_send_events (kernel_event_flag_unlock);
+		return;
+	}
+
+	if (ch == 'X')
+	{
+		kernel_send_events (kernel_event_flag_cmd_out);
+		return;
+	}
+
 	hal_uart_put_char (ch);
 
 	kernel_send_msg (KERNEL_MSG_Q_TASK0, &ch, 1);
 	kernel_send_events (kernel_event_flag_uart_in);
-
-	if (ch == 'X')
-		kernel_send_events (kernel_event_flag_cmd_out);
 }

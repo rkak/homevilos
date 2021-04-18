@@ -13,12 +13,28 @@ static void hw_init (void);
 extern void hal_interrupt_init (void);
 extern void hal_uart_init (void);
 extern void hal_uart_put_char (uint8_t ch);
+
 static void printf_test (void);
 static void timer_test (void);
 static void kernel_init (void);
 void user_task0 (void);
 void user_task1 (void);
 void user_task2 (void);
+
+static uint32_t shared_value;
+
+static void test_critical_section (uint32_t p, uint32_t task_id)
+{
+	kernel_lock_mutex ();
+
+	debug_printf ("User task #%u Send=%u\n", task_id, p);
+	shared_value = p;
+	kernel_yield ();
+	delay (1000);
+	debug_printf ("User task #%u shared value = %u\n", task_id, shared_value);
+
+	kernel_unlock_mutex ();
+}
 
 void main (void)
 {
@@ -55,6 +71,9 @@ static void kernel_init (void)
 
 	kernel_task_init ();
 	kernel_event_flag_init ();
+	kernel_msg_q_init ();
+
+	kernel_sem_init (1);
 
 	task_id = kernel_task_create (user_task0);
 	if (task_id == NOT_ENOUGH_TASK_NUM)
@@ -109,7 +128,7 @@ void user_task0 (void)
 	debug_printf ("User task #0 SP=0x%x\n", &local);
 
 	uint8_t cmd_buf[16];
-	uint32_t cmd_buf_idx = 0;
+	int32_t cmd_buf_idx = 0;
 	uint8_t uartch = 0;
 
 	while (true)
@@ -158,6 +177,7 @@ void user_task0 (void)
 					}
 					break;
 				case kernel_event_flag_cmd_out:
+					test_critical_section (5, 0);
 					debug_printf ("\nEvent handled of cmd out by task0\n");
 					break;
 				default:
@@ -180,7 +200,7 @@ void user_task1 (void)
 
 	while (true)
 	{
-		kernel_event_flag_t handle_event = kernel_wait_events (kernel_event_flag_cmd_in);
+		kernel_event_flag_t handle_event = kernel_wait_events (kernel_event_flag_cmd_in | kernel_event_flag_unlock);
 		switch (handle_event)
 		{
 			case kernel_event_flag_cmd_in:
@@ -189,6 +209,10 @@ void user_task1 (void)
 				kernel_recv_msg (KERNEL_MSG_Q_TASK1, cmd, cmd_len);
 				debug_printf ("\nRecv Cmd : %s\n", cmd);
 				break;
+			case kernel_event_flag_unlock:
+				kernel_unlock_mutex ();
+				break;
+
 		}
 		kernel_yield ();
 	}
@@ -201,6 +225,7 @@ void user_task2 (void)
 	debug_printf ("User task #2 SP=0x%x\n", &local);
 	while (true)
 	{
+		test_critical_section (3, 2);
 		kernel_yield ();
 	}
 }

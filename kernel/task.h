@@ -27,6 +27,8 @@ void kernel_task_init (void);
 uint32_t kernel_task_create (kernel_task_func_t start_func);
 uint32_t kernel_task_prio_create (kernel_task_func_t start_func, uint32_t priority);
 
+uint32_t kernel_task_get_current_task_id (void);
+
 __attribute__ ((naked)) void kernel_task_context_switching (void);
 static __attribute__ ((naked)) void save_context (void);
 static __attribute__ ((naked)) void restore_context (void);
